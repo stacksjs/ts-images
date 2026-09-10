@@ -88,16 +88,16 @@
   },
   "dependencies": {
     "@stacksjs/ts-avif": "^0.1.4",
-    "@stacksjs/ts-bmp": "^0.1.0",
-    "@stacksjs/ts-png": "^0.1.2",
-    "@stacksjs/ts-svg": "^0.1.1",
-    "@stacksjs/ts-webp": "^0.1.2",
+    "@stacksjs/ts-bmp": "^0.1.1",
+    "@stacksjs/ts-png": "^0.1.8",
+    "@stacksjs/ts-svg": "^0.1.3",
+    "@stacksjs/ts-webp": "^0.1.3",
     "ts-gif": "^0.1.2",
-    "ts-jpeg": "^0.3.1"
+    "ts-jpeg": "^0.3.5"
   },
   "devDependencies": {
-    "@stacksjs/clapp": "^0.2.0",
-    "bunfig": "^0.15.9"
+    "@stacksjs/clapp": "^0.2.16",
+    "bunfig": "^0.15.19"
   },
   "simple-git-hooks": {
     "pre-commit": "bunx lint-staged"
