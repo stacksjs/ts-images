@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.17...v0.2.18)
+
+## 🐛 Bug Fixes
+
+- **delivery**: keep the output directory out of variant names ([05a87f3](https://github.com/stacksjs/ts-images/commit/05a87f3)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.18 ([f71bd5a](https://github.com/stacksjs/ts-images/commit/f71bd5a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.16...v0.2.17)
 
 ## 🐛 Bug Fixes
