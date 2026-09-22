@@ -24,6 +24,59 @@ describe('image delivery', () => {
     expect(() => normalizeImageWidths([0], 1024)).toThrow()
   })
 
+  test('leaves the event loop free while it builds a catalog', async () => {
+    // Codec work is a long synchronous stretch inside a promise, so awaiting
+    // it only drains microtasks — a batch of images starves the macrotask side
+    // entirely. When the host is a server that means the socket callbacks
+    // which answer requests never run: the port is bound, nothing replies, and
+    // the connection is eventually closed having sent nothing.
+    //
+    // Storage reports every variant as already present, so nothing encodes and
+    // no file I/O happens. Any turn the loop gets is therefore one the catalog
+    // handed back on purpose: unyielded this counter reaches exactly zero.
+    const directory = await mkdtemp(join(tmpdir(), 'ts-images-yield-'))
+    outputDirectories.push(directory)
+
+    const storage = {
+      cacheNamespace: 'yield-test',
+      async stat(key: string) {
+        return { bytes: 10, path: join(directory, key), url: `/_img/${key}` }
+      },
+      async write(key: string, bytes: Uint8Array) {
+        return { bytes: bytes.byteLength, path: join(directory, key), url: `/_img/${key}` }
+      },
+      url: (key: string) => `/_img/${key}`,
+    }
+
+    let turns = 0
+    let stop = false
+    const tick = (): void => {
+      if (stop) return
+      turns++
+      setTimeout(tick, 0)
+    }
+    setTimeout(tick, 0)
+
+    try {
+      await createImageDeliveryCatalog({
+        storage,
+        baseUrl: '/_img',
+        widths: [320],
+        formats: ['webp'],
+        entries: Array.from({ length: 20 }, (_, index) => ({
+          key: `/${index}.png`,
+          input: fixture,
+          name: `n${index}`,
+        })),
+      })
+    }
+    finally {
+      stop = true
+    }
+
+    expect(turns).toBeGreaterThan(0)
+  })
+
   test('names variants the same from any output directory', async () => {
     // A deploy that ships atomic releases runs the identical build from a new
     // absolute path every time. If the output directory reaches the variant

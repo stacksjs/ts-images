@@ -264,6 +264,19 @@ function localStorage(outDir: string, baseUrl: string): ImageDeliveryStorage {
   }
 }
 
+/**
+ * Hand the event loop a full turn.
+ *
+ * `await` alone only drains microtasks, and decoding or encoding an image is a
+ * long synchronous stretch inside one. A batch of them therefore starves
+ * everything the host has queued on the macrotask side — timers, and, when the
+ * host is a server, the socket callbacks that answer requests. A zero-delay
+ * timer is the yield point that lets those run.
+ */
+function yieldToEventLoop(): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, 0))
+}
+
 async function mapConcurrent<T, R>(items: T[], limit: number, work: (item: T) => Promise<R>): Promise<R[]> {
   const output = new Array<R>(items.length)
   let nextIndex = 0
@@ -271,6 +284,10 @@ async function mapConcurrent<T, R>(items: T[], limit: number, work: (item: T) =>
   async function worker(): Promise<void> {
     while (nextIndex < items.length) {
       const index = nextIndex++
+      // Before each item, not after: the yield has to sit between two pieces
+      // of codec work, and the last item has nothing following it to separate.
+      // Costs one timer per image — unmeasurable next to decoding one.
+      await yieldToEventLoop()
       output[index] = await work(items[index])
     }
   }
