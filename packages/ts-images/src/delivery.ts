@@ -231,7 +231,24 @@ async function writeAtomically(path: string, bytes: Uint8Array): Promise<void> {
 
 function localStorage(outDir: string, baseUrl: string): ImageDeliveryStorage {
   return {
-    cacheNamespace: `local:${outDir}:${baseUrl}`,
+    // Deliberately free of `outDir`. This namespace is folded into the content
+    // hash that names every variant, so anything in it becomes part of the
+    // filename. The absolute directory is not a property of the artifact —
+    // it is where this particular build happens to put it — and including it
+    // breaks every consumer that builds the same tree from a new path each
+    // time. Atomic-release deploys do exactly that:
+    //
+    //   releases/<sha-1>/images  ->  hero-44338d78039b57e4-640.webp
+    //   releases/<sha-2>/images  ->  hero-301f828bdc402f4a-640.webp
+    //
+    // Identical bytes, identical options, a different name — so `stat()` never
+    // finds what the last release wrote, every deploy re-encodes the whole
+    // directory, and the old generation is left behind forever.
+    //
+    // The base URL stays, because two targets publishing into different URL
+    // spaces genuinely are different artifacts. Two builds writing the same
+    // URL space from different directories are not.
+    cacheNamespace: `local:${baseUrl}`,
     async stat(key) {
       const path = join(outDir, key)
       const value = await stat(path).catch(() => null)

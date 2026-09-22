@@ -24,6 +24,52 @@ describe('image delivery', () => {
     expect(() => normalizeImageWidths([0], 1024)).toThrow()
   })
 
+  test('names variants the same from any output directory', async () => {
+    // A deploy that ships atomic releases runs the identical build from a new
+    // absolute path every time. If the output directory reaches the variant
+    // names, nothing the previous release wrote is ever reusable.
+    const first = await mkdtemp(join(tmpdir(), 'ts-images-delivery-a-'))
+    const second = await mkdtemp(join(tmpdir(), 'ts-images-delivery-b-'))
+    outputDirectories.push(first, second)
+
+    const options = {
+      input: fixture,
+      name: 'app-icon',
+      widths: [64, 128],
+      formats: ['webp'] as const,
+      baseUrl: '/images',
+      placeholder: false,
+    }
+
+    const one = await createImageDeliveryManifest({ ...options, outDir: first })
+    const two = await createImageDeliveryManifest({ ...options, outDir: second })
+
+    expect(two.variants.map(variant => variant.url)).toEqual(one.variants.map(variant => variant.url))
+    expect(two.fallback.url).toBe(one.fallback.url)
+  })
+
+  test('keeps separate URL spaces apart', async () => {
+    // The base URL still belongs in the namespace: two targets publishing into
+    // different URL spaces really are different artifacts.
+    const outDir = await mkdtemp(join(tmpdir(), 'ts-images-delivery-url-'))
+    outputDirectories.push(outDir)
+
+    const options = {
+      input: fixture,
+      name: 'app-icon',
+      outDir,
+      widths: [64],
+      formats: ['webp'] as const,
+      placeholder: false,
+    }
+
+    const one = await createImageDeliveryManifest({ ...options, baseUrl: '/images' })
+    const two = await createImageDeliveryManifest({ ...options, baseUrl: '/assets' })
+
+    const nameOf = (url: string) => url.split('/').pop()
+    expect(nameOf(two.fallback.url)).not.toBe(nameOf(one.fallback.url))
+  })
+
   test('generates deterministic responsive variants and response metadata', async () => {
     const outDir = await mkdtemp(join(tmpdir(), 'ts-images-delivery-'))
     outputDirectories.push(outDir)
