@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.18...v0.2.19)
+
+## 🐛 Bug Fixes
+
+- **delivery**: yield the event loop between images ([2dd7ce1](https://github.com/stacksjs/ts-images/commit/2dd7ce1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.19 ([359256c](https://github.com/stacksjs/ts-images/commit/359256c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.17...v0.2.18)
 
 ## 🐛 Bug Fixes

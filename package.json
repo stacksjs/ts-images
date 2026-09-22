@@ -1,7 +1,7 @@
 {
   "name": "ts-images",
   "type": "module",
-  "version": "0.2.18",
+  "version": "0.2.19",
   "private": true,
   "description": "Modern image optimizations & manipulations.",
   "author": "Chris Breuer <chris@stacksjs.org>",
