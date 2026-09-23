@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.19...v0.2.20)
+
+## ✨ Features
+
+- **activity-card**: draw the loop mark, and take a caller's own logo ([25ef49f](https://github.com/stacksjs/ts-images/commit/25ef49f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.20 ([05438ac](https://github.com/stacksjs/ts-images/commit/05438ac)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.18...v0.2.19)
 
 ## 🐛 Bug Fixes
