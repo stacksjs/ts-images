@@ -14,7 +14,15 @@ export interface ActivityShareCardOptions {
   accent?: string
   activityType: string
   athlete?: string
+  /** The name beside the mark. Defaults to `Wildloop`. */
   brand?: string
+  /**
+   * The logo drawn before the brand name, as SVG markup in a 34×34 box with
+   * its origin at the top left. Trusted markup — it is inserted as given, so
+   * pass your own artwork, never user input. Defaults to the loop mark: a ring
+   * with the runner's position on it, in the accent colour.
+   */
+  mark?: string
   completedAt?: string
   distance: string
   duration: string
@@ -181,11 +189,26 @@ function defs(accent: string): string {
   </defs>`
 }
 
-function brandMarkup(brand: string, x: number, y: number, accent: string): string {
+/** The name a card carries when the caller names none. */
+const DEFAULT_BRAND = 'Wildloop'
+
+/**
+ * The default mark, in its 34×34 box: a closed ring with the runner's position
+ * on it, the same mark the Wildloop site draws beside its wordmark. It used to
+ * be a check in a filled circle, which is nobody's logo and read as a
+ * "completed" badge rather than a brand.
+ */
+function loopMark(accent: string): string {
+  return `<circle cx="17" cy="19" r="13" fill="none" stroke="${accent}" stroke-width="4"/>
+    <circle cx="17" cy="6" r="5.5" fill="${accent}" stroke="#07110f" stroke-width="3"/>`
+}
+
+function brandMarkup(options: ActivityShareCardOptions, x: number, y: number, accent: string): string {
+  // The mark's box spans y -27..7 around the brand baseline, which is where
+  // the old 17px-radius badge sat, so every preset keeps its spacing.
   return `<g transform="translate(${x} ${y})">
-    <circle cx="17" cy="-10" r="17" fill="${accent}"/>
-    <path d="M8 -10 L14 -3 L27 -20" fill="none" stroke="#07110f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-    <text x="49" class="brand">${truncate(brand, 24, 'WildLoop')}</text>
+    <g transform="translate(0 -27)">${options.mark || loopMark(accent)}</g>
+    <text x="49" class="brand">${truncate(options.brand, 24, DEFAULT_BRAND)}</text>
   </g>`
 }
 
@@ -202,7 +225,7 @@ function landscapeCard(options: ActivityShareCardOptions, accent: string): strin
     { label: 'AVG PACE', value: options.pace || '—' },
     { label: 'ELEVATION', value: options.elevation || '—' },
   ]
-  return `${brandMarkup(options.brand || 'WildLoop', 72, 66, accent)}
+  return `${brandMarkup(options, 72, 66, accent)}
   <text x="72" y="158" class="accent kicker">${truncate(options.activityType.toUpperCase(), 28)}</text>
   <text x="72" y="220" class="title" font-size="57">${truncate(options.title, 26)}</text>
   ${metadataMarkup(options, 72, 262, 42)}
@@ -218,7 +241,7 @@ function squareCard(options: ActivityShareCardOptions, accent: string): string {
     { label: 'AVG PACE', value: options.pace || '—' },
     { label: 'ELEVATION', value: options.elevation || '—' },
   ]
-  return `${brandMarkup(options.brand || 'WildLoop', 72, 68, accent)}
+  return `${brandMarkup(options, 72, 68, accent)}
   <text x="72" y="158" class="accent kicker">${truncate(options.activityType.toUpperCase(), 30)}</text>
   <text x="72" y="222" class="title" font-size="60">${truncate(options.title, 31)}</text>
   ${metadataMarkup(options, 72, 258, 66)}
@@ -234,7 +257,7 @@ function storyCard(options: ActivityShareCardOptions, accent: string): string {
     { label: 'AVG PACE', value: options.pace || '—' },
     { label: 'ELEVATION', value: options.elevation || '—' },
   ]
-  return `${brandMarkup(options.brand || 'WildLoop', 72, 94, accent)}
+  return `${brandMarkup(options, 72, 94, accent)}
   <text x="72" y="226" class="accent kicker">${truncate(options.activityType.toUpperCase(), 30)}</text>
   <text x="72" y="310" class="title" font-size="72">${truncate(options.title, 27)}</text>
   ${metadataMarkup(options, 72, 362, 68)}

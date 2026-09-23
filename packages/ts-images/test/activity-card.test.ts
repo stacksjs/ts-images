@@ -29,6 +29,26 @@ describe('activity share cards', () => {
     expect(svg).toContain('Chris')
   })
 
+  test('brands the card with the loop mark and the Wildloop name by default', () => {
+    const svg = activityShareCardSvg({ activityType: 'Run', distance: '5 km', duration: '25:00', route, title: 'Loop' })
+
+    expect(svg).toContain('>Wildloop</text>')
+    expect(svg).not.toContain('WildLoop')
+    // The ring, not the old check badge.
+    expect(svg).toContain('r="13" fill="none" stroke="#34d399"')
+    expect(svg).not.toContain('M8 -10 L14 -3 L27 -20')
+  })
+
+  test('draws a caller-supplied mark and name in every preset', () => {
+    const mark = '<rect data-test-mark width="34" height="34"/>'
+    for (const preset of ['landscape', 'square', 'story'] as const) {
+      const svg = activityShareCardSvg({ activityType: 'Run', brand: 'Acme', distance: '5 km', duration: '25:00', mark, preset, route, title: 'Loop' })
+      expect(svg).toContain(mark)
+      expect(svg).toContain('>Acme</text>')
+      expect(svg).not.toContain('r="13" fill="none"')
+    }
+  })
+
   test('uses the requested social preset dimensions', () => {
     for (const preset of ['landscape', 'square', 'story'] as const) {
       const svg = activityShareCardSvg({ activityType: 'Hike', distance: '5 km', duration: '48:20', preset, route, title: 'Forest loop' })
