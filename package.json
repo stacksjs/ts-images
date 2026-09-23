@@ -37,7 +37,7 @@
     "lint:fix": "bunx --bun pickier . --fix",
     "changelog": "bunx logsmith --verbose",
     "changelog:generate": "bunx logsmith --output CHANGELOG.md && bun scripts/normalize-changelog.ts",
-    "release": "bunx --bun bumpx prompt --recursive",
+    "release": "bunx --bun @stacksjs/bumpx prompt --recursive",
     "release:patch": "bunx --bun bumpx patch --recursive --commit --tag --push --yes",
     "release:minor": "bunx --bun bumpx minor --recursive --commit --tag --push --yes",
     "postinstall": "bunx git-hooks",
@@ -50,6 +50,7 @@
     "format:fix": "bunx --bun pickier . --format --write"
   },
   "devDependencies": {
+    "@stacksjs/bumpx": "^0.2.17",
     "@stacksjs/bunpress": "^0.2.11",
     "better-dx": "^0.2.22"
   },
