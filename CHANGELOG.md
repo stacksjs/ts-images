@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.20...v0.2.21)
+
+## ✨ Features
+
+- **og**: let a card set its eyebrow and subtitle sizes ([5853e5d](https://github.com/stacksjs/ts-images/commit/5853e5d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **release**: point the release script at @stacksjs/bumpx ([27db55e](https://github.com/stacksjs/ts-images/commit/27db55e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.21 ([79b566b](https://github.com/stacksjs/ts-images/commit/79b566b)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.19...v0.2.20)
 
 ## ✨ Features
