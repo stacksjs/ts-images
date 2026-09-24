@@ -183,7 +183,20 @@ export interface SocialCardOptions {
   markAspect?: number
   /** Subtitle colour. Defaults to a dimmed `color`. */
   mutedColor?: RGBA
+  /**
+   * Headline size in pixels. @default 6.2% of the width
+   *
+   * The three sizes are set against the full-size card, but a card is mostly
+   * seen far smaller: around 500px wide in a timeline and 300px or less in a
+   * chat thread, where the defaults put the subtitle near 7px and the eyebrow
+   * near 6px. A card that must read at thumbnail size wants all three larger,
+   * and fewer words.
+   */
   titleSize?: number
+  /** Eyebrow size in pixels. @default 1.9% of the width */
+  eyebrowSize?: number
+  /** Subtitle size in pixels. @default 2.45% of the width */
+  subtitleSize?: number
   titleLines?: number
   /**
    * Lines the subtitle may wrap to. @default 2
@@ -340,8 +353,8 @@ export async function renderSocialCard(options: SocialCardOptions): Promise<Uint
     ellipsis: true,
   })
 
-  const subtitleSize = Math.round(width * 0.0245)
-  const eyebrowSize = Math.round(width * 0.019)
+  const subtitleSize = options.subtitleSize ?? Math.round(width * 0.0245)
+  const eyebrowSize = options.eyebrowSize ?? Math.round(width * 0.019)
   // Measured, not assumed: the block the subtitle needs sets where the title
   // above it has to stop, so a subtitle that wraps pushes the headline up
   // instead of being trimmed to fit a gap that was reserved before anyone
