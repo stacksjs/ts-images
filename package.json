@@ -50,9 +50,9 @@
     "format:fix": "bunx --bun pickier . --format --write"
   },
   "devDependencies": {
-    "@stacksjs/bumpx": "^0.2.17",
-    "@stacksjs/bunpress": "^0.2.11",
-    "better-dx": "^0.2.22"
+    "@stacksjs/bumpx": "^0.2.18",
+    "@stacksjs/bunpress": "^0.2.14",
+    "better-dx": "^0.2.25"
   },
   "workspaces": [
     "packages/*"
