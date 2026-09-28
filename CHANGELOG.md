@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.21...v0.2.22)
+
+## 🐛 Bug Fixes
+
+- **deps**: require @stacksjs/ts-webp 0.1.6, the first that encodes alpha ([2a9d972](https://github.com/stacksjs/ts-images/commit/2a9d972)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.22 ([73ab794](https://github.com/stacksjs/ts-images/commit/73ab794)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.20...v0.2.21)
 
 ## ✨ Features
