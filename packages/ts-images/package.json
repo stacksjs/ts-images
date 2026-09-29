@@ -75,7 +75,7 @@
     "prepublishOnly": "bun --bun run build && bun run smoke && bun run compile:all && bun run zip:all",
     "smoke": "bun --bun scripts/smoke-dist.ts",
     "release": "bun run changelog && bunx bumpp package.json --all",
-    "release:patch": "bun --bun run changelog && bunx --bun bumpx patch --recursive --yes",
+    "release:patch": "bun --bun run changelog && bunx --bun @stacksjs/bumpx patch --recursive --yes",
     "test": "bun test",
     "typecheck": "bunx tsc --noEmit",
     "zip": "bun run zip:all",

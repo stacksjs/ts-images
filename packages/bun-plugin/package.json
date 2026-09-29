@@ -49,7 +49,7 @@
     "fresh": "bunx rimraf node_modules/ bun.lock && bun i",
     "prepublishOnly": "bun --bun run build",
     "release": "bun run changelog && bunx bumpp package.json --all",
-    "release:patch": "bun --bun run changelog && bunx --bun bumpx patch --recursive --yes",
+    "release:patch": "bun --bun run changelog && bunx --bun @stacksjs/bumpx patch --recursive --yes",
     "test": "bun test",
     "typecheck": "bunx tsc --noEmit"
   },
