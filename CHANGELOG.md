@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.22...v0.2.23)
+
+## 🐛 Bug Fixes
+
+- **favicon**: fill the box, and stop promising a maskable icon ([8291178](https://github.com/stacksjs/ts-images/commit/8291178)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.23 ([3f29bc0](https://github.com/stacksjs/ts-images/commit/3f29bc0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.21...v0.2.22)
 
 ## 🐛 Bug Fixes
