@@ -29,7 +29,7 @@ describe('the splathash entry point', () => {
     }
   }
 
-  const hash = rgbaToSplatHash(width, height, rgba)
+  const hash = rgbaToSplatHash(rgba, width, height)
 
   test('base64 round-trips to the same bytes', () => {
     const encoded = splatHashToBase64(hash)

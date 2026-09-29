@@ -193,8 +193,8 @@ describe('image delivery', () => {
       0, 0, 255, 255,
     ])
     const { encode } = await import('../src')
-    const opaquePng = await encode({ data: opaque, width: 2, height: 1, channels: 4 }, 'png')
-    const transparentPng = await encode({ data: transparent, width: 2, height: 1, channels: 4 }, 'png')
+    const opaquePng = await encode({ data: opaque, width: 2, height: 1, colorSpace: 'srgb', hasAlpha: true, bitDepth: 8 }, 'png')
+    const transparentPng = await encode({ data: transparent, width: 2, height: 1, colorSpace: 'srgb', hasAlpha: true, bitDepth: 8 }, 'png')
 
     const opaqueManifest = await createImageDeliveryManifest({
       input: opaquePng,
