@@ -80,6 +80,13 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
+      # The entry-point tests import the package by its published subpaths
+      # (`ts-images/delivery`), which resolve into dist/, so the tests need a
+      # build to run against. Without it they fail on "Cannot find module".
+      - name: Build
+        run: bun build.ts
+        working-directory: packages/ts-images
+
       - name: Unit Test
         run: bun test
 
