@@ -14,7 +14,8 @@ export interface DecodeOptions {
   colorTransform?: boolean
   formatAsRGBA?: boolean
   /**
-   * Re-orient JPEG pixels upright per the EXIF orientation tag
+   * Re-orient pixels upright per the JPEG EXIF orientation tag or the
+   * HEIF irot/imir transforms
    * (default: true). The returned width/height reflect the upright image.
    */
   applyOrientation?: boolean
@@ -55,6 +56,7 @@ const codecLoaders: Record<string, () => Promise<any>> = {
   '@stacksjs/ts-bmp': () => import('@stacksjs/ts-bmp'),
   '@stacksjs/ts-webp': () => import('@stacksjs/ts-webp'),
   '@stacksjs/ts-avif': () => import('@stacksjs/ts-avif'),
+  '@stacksjs/ts-heic': () => import('@stacksjs/ts-heic'),
 }
 
 async function loadCodec(name: string): Promise<any> {
@@ -274,6 +276,7 @@ export async function decode(
     case 'bmp': return decodeBmp(buffer, options)
     case 'webp': return decodeWebp(buffer, options)
     case 'avif': return decodeAvif(buffer, options)
+    case 'heif': return decodeHeif(buffer, options)
     default: throw new Error(`ts-images: unsupported format "${format}"`)
   }
 }
@@ -475,6 +478,19 @@ async function decodeAvif(buffer: Uint8Array, _options: DecodeOptions): Promise<
   const avif = await loadCodec('@stacksjs/ts-avif')
   const result = avif.decode(buffer)
   return fromCodecData(result.data, result.width, result.height, { channels: 4 })
+}
+
+/**
+ * HEIC/HEIF stills, as iPhones take them. Decode only: nothing reads HEIC
+ * that does not also read JPEG, so there is no reason to write it.
+ */
+async function decodeHeif(buffer: Uint8Array, options: DecodeOptions): Promise<ImageData> {
+  const heic = await loadCodec('@stacksjs/ts-heic')
+  // irot/imir are HEIF's orientation, the counterpart of JPEG's EXIF tag.
+  const result = heic.decodeHeic(buffer, { applyTransforms: options.applyOrientation !== false })
+  const imageData = fromCodecData(result.data, result.width, result.height, { channels: 4 })
+  imageData.hasAlpha = result.hasAlpha
+  return imageData
 }
 
 async function encodeAvif(imageData: ImageData, options: EncodeOptions): Promise<Uint8Array> {
