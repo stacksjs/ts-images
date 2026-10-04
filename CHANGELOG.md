@@ -1,5 +1,26 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.23...v0.2.24)
+
+## 🐛 Bug Fixes
+
+- **codecs**: tell HEIC from AVIF by the ftyp compatible brands ([39b2ee9](https://github.com/stacksjs/ts-images/commit/39b2ee9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **codecs**: import each codec by a literal specifier ([de3075a](https://github.com/stacksjs/ts-images/commit/de3075a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 💚 Continuous Integration
+
+- build before the unit tests, which import the published subpaths ([3380ea5](https://github.com/stacksjs/ts-images/commit/3380ea5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.24 ([188ad77](https://github.com/stacksjs/ts-images/commit/188ad77)) _(by Chris <chrisbreuer93@gmail.com>)_
+- run bun-git-hooks and @stacksjs/logsmith, not the unrelated npm 'git-hooks' and 'logsmith' ([ee6f5e1](https://github.com/stacksjs/ts-images/commit/ee6f5e1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release through @stacksjs/bumpx, not the unrelated npm 'bumpx' ([cbbe9a5](https://github.com/stacksjs/ts-images/commit/cbbe9a5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.22...v0.2.23)
 
 ## 🐛 Bug Fixes

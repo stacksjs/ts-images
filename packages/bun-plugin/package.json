@@ -1,7 +1,7 @@
 {
   "name": "bun-plugin-imgx",
   "type": "module",
-  "version": "0.2.23",
+  "version": "0.2.24",
   "description": "Bun plugin for imgx",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
