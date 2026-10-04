@@ -42,6 +42,21 @@ export interface ImageMetadata {
  */
 const _codecCache: Record<string, { module: any, available: boolean, error?: unknown }> = Object.create(null)
 
+/**
+ * One literal `import()` per codec. A bundler (and `bun build --compile`)
+ * only follows specifiers it can read, so `import(name)` with a variable
+ * left every codec out of compiled apps, where decoding then failed with
+ * "not installed" although the package was a declared dependency.
+ */
+const codecLoaders: Record<string, () => Promise<any>> = {
+  'ts-jpeg': () => import('ts-jpeg'),
+  'ts-gif': () => import('ts-gif'),
+  '@stacksjs/ts-png': () => import('@stacksjs/ts-png'),
+  '@stacksjs/ts-bmp': () => import('@stacksjs/ts-bmp'),
+  '@stacksjs/ts-webp': () => import('@stacksjs/ts-webp'),
+  '@stacksjs/ts-avif': () => import('@stacksjs/ts-avif'),
+}
+
 async function loadCodec(name: string): Promise<any> {
   const cached = _codecCache[name]
   if (cached) {
@@ -53,8 +68,8 @@ async function loadCodec(name: string): Promise<any> {
     )
   }
   try {
-    // eslint-disable-next-line ts/no-require-imports
-    const mod = await import(name)
+    const loader = codecLoaders[name]
+    const mod = loader ? await loader() : await import(name)
     _codecCache[name] = { module: mod, available: true }
     return mod
   }
