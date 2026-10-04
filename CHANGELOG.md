@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.24...v0.2.25)
+
+## ✨ Features
+
+- **codecs**: decode HEIC through @stacksjs/ts-heic ([26f24e2](https://github.com/stacksjs/ts-images/commit/26f24e2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.25 ([dbed668](https://github.com/stacksjs/ts-images/commit/dbed668)) _(by Chris <chrisbreuer93@gmail.com>)_
+- lock @stacksjs/ts-heic 0.0.2 ([5cdadb1](https://github.com/stacksjs/ts-images/commit/5cdadb1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.23...v0.2.24)
 
 ## 🐛 Bug Fixes
