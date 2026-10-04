@@ -114,11 +114,8 @@ export function detectFormat(buffer: Uint8Array): string | null {
   ) return 'webp'
 
   // AVIF/HEIF: ftypXXXX at offset 4
-  if (buffer[4] === 0x66 && buffer[5] === 0x74 && buffer[6] === 0x79 && buffer[7] === 0x70) {
-    const brand = String.fromCharCode(buffer[8], buffer[9], buffer[10], buffer[11])
-    if (brand === 'avif' || brand === 'avis' || brand === 'mif1' || brand === 'miaf') return 'avif'
-    if (brand === 'heic' || brand === 'heix' || brand === 'hevc' || brand === 'hevx') return 'heif'
-  }
+  if (buffer[4] === 0x66 && buffer[5] === 0x74 && buffer[6] === 0x79 && buffer[7] === 0x70)
+    return isobmffImageFormat(buffer)
 
   // TIFF: "II*\0" or "MM\0*"
   if (
@@ -127,6 +124,34 @@ export function detectFormat(buffer: Uint8Array): string | null {
   ) return 'tiff'
 
   return null
+}
+
+const AVIF_BRANDS = new Set(['avif', 'avis'])
+const HEIF_BRANDS = new Set(['heic', 'heix', 'heim', 'heis', 'hevc', 'hevx'])
+
+/**
+ * AVIF or HEIC, from the `ftyp` box. The major brand alone is not enough:
+ * `mif1` and `miaf` are generic HEIF brands that both AVIF and HEIC files
+ * use as their major brand, naming the real codec only among the
+ * compatible brands - so those used to be called AVIF unconditionally.
+ */
+function isobmffImageFormat(buffer: Uint8Array): string | null {
+  const brandAt = (offset: number): string =>
+    String.fromCharCode(buffer[offset], buffer[offset + 1], buffer[offset + 2], buffer[offset + 3])
+  const major = brandAt(8)
+  if (AVIF_BRANDS.has(major))
+    return 'avif'
+  if (HEIF_BRANDS.has(major))
+    return 'heif'
+  const boxSize = Math.min(buffer.length, ((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]) >>> 0)
+  const compatible: string[] = []
+  for (let offset = 16; offset + 4 <= boxSize; offset += 4)
+    compatible.push(brandAt(offset))
+  if (compatible.some(b => AVIF_BRANDS.has(b)))
+    return 'avif'
+  if (compatible.some(b => HEIF_BRANDS.has(b)))
+    return 'heif'
+  return major === 'mif1' || major === 'miaf' ? 'avif' : null
 }
 
 /**
