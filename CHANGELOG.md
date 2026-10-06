@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.25...v0.2.26)
+
+## ✨ Features
+
+- **activity-card**: draw the route on a real map ([d8eded9](https://github.com/stacksjs/ts-images/commit/d8eded9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.26 ([4e09e94](https://github.com/stacksjs/ts-images/commit/4e09e94)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.24...v0.2.25)
 
 ## ✨ Features
