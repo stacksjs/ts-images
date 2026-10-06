@@ -175,4 +175,37 @@ describe('activity share cards', () => {
     expect(Number(pill[1]) + Number(pill[3]) - box.x).toBeLessThanOrEqual(right)
     expect(Number(pill[2]) + 28 - box.y).toBeLessThanOrEqual(bottom)
   })
+
+  test('shows the caller\'s metrics and, with no route, the splits', () => {
+    const svg = activityShareCardSvg({
+      activityType: 'Treadmill run',
+      distance: '10.00 mi',
+      duration: '1:30:00',
+      metrics: [
+        { label: 'DISTANCE', value: '10.00 mi' },
+        { label: 'MOVING TIME', value: '1:30:00' },
+        { label: 'AVG PACE', value: '9:00 /mi' },
+        { label: 'AVG HEART RATE', value: '136 bpm' },
+        { label: 'IGNORED', value: 'fifth' },
+      ],
+      preset: 'landscape',
+      route: [],
+      splits: [{ pace: '9:00', seconds: 540 }, { pace: '9:30', seconds: 570 }, { label: 'last', pace: '8:30', seconds: 510 }],
+      title: 'Hotel gym',
+    })
+    expect(svg).toContain('AVG HEART RATE')
+    expect(svg).toContain('136 bpm')
+    expect(svg).not.toContain('ELEVATION')
+    expect(svg).not.toContain('fifth')
+    expect(svg).not.toContain('ROUTE UNAVAILABLE')
+    expect(svg).toContain('>SPLITS</text>')
+    expect(svg).toContain('>9:30</text>')
+    expect(svg).toContain('>last</text>')
+  })
+
+  test('draws the route, not the splits, when there is one', () => {
+    const svg = activityShareCardSvg({ activityType: 'Run', distance: '5 km', duration: '25:00', route, splits: [{ pace: '5:00', seconds: 300 }], title: 'Loop' })
+    expect(svg).toContain('id="activity-route"')
+    expect(svg).not.toContain('>SPLITS</text>')
+  })
 })

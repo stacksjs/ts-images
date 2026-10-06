@@ -10,6 +10,16 @@ export interface ActivityShareMetric {
   value: string
 }
 
+/** One split: a mile or a kilometre, say, and how long it took. */
+export interface ActivityShareSplit {
+  /** Defaults to the split's number, from 1. */
+  label?: string
+  /** As shown, e.g. `9:00`. */
+  pace: string
+  /** The split's time in seconds, which sizes its bar: faster is longer. */
+  seconds: number
+}
+
 export interface ActivityShareCardOptions {
   accent?: string
   activityType: string
@@ -38,6 +48,19 @@ export interface ActivityShareCardOptions {
    * projected exactly as the tiles are, so it sits on the streets it ran.
    */
   basemap?: ActivityShareBasemap | null
+  /**
+   * The four numbers under the title, in place of distance, moving time, pace
+   * and elevation. An indoor run, say, has a heart rate worth showing and no
+   * elevation. Up to four are drawn.
+   */
+  metrics?: ActivityShareMetric[]
+  /**
+   * Splits, drawn where the map would be when there is no route: a treadmill
+   * run has no line to draw, but its splits say how it went.
+   */
+  splits?: ActivityShareSplit[]
+  /** The heading over the splits. Defaults to `SPLITS`. */
+  splitsLabel?: string
 }
 
 /**
@@ -233,6 +256,48 @@ export function activityShareCardFileName(title: string, preset: ActivityShareCa
   return `${slug}-${preset}.png`
 }
 
+function cardMetrics(options: ActivityShareCardOptions): ActivityShareMetric[] {
+  if (options.metrics?.length)
+    return options.metrics.slice(0, 4)
+  return [
+    { label: 'DISTANCE', value: options.distance },
+    { label: 'MOVING TIME', value: options.duration },
+    { label: 'AVG PACE', value: options.pace || '—' },
+    { label: 'ELEVATION', value: options.elevation || '—' },
+  ]
+}
+
+/**
+ * Splits as rows, the way a training log lists them: the split's number, a
+ * bar whose length is its speed against the fastest, and its pace. Bars never
+ * fall below 45%, so one slow split reads as slower rather than as missing.
+ */
+function splitsMarkup(splits: ActivityShareSplit[], box: ActivityRouteBox, accent: string, heading: string): string {
+  const shown = splits.filter(split => Number.isFinite(split.seconds) && split.seconds > 0).slice(0, 20)
+  const fastest = Math.min(...shown.map(split => split.seconds))
+  const inset = 40
+  const top = box.y + 86
+  const rowHeight = Math.min(46, (box.height - 86 - inset) / Math.max(1, shown.length))
+  const barX = box.x + inset + 44
+  const barWidth = box.width - inset * 2 - 44 - 92
+  const rows = shown.map((split, index) => {
+    const y = top + index * rowHeight
+    const share = Math.max(0.45, fastest / split.seconds)
+    const thickness = Math.max(6, Math.min(16, rowHeight * 0.38))
+    return `<g>
+      <text x="${box.x + inset}" y="${(y + rowHeight / 2 + 6).toFixed(1)}" fill="#aab9b3" font-size="17" font-weight="650">${truncate(split.label ?? String(index + 1), 4)}</text>
+      <rect x="${barX}" y="${(y + (rowHeight - thickness) / 2).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${thickness.toFixed(1)}" rx="${(thickness / 2).toFixed(1)}" fill="#ffffff" fill-opacity="0.06"/>
+      <rect x="${barX}" y="${(y + (rowHeight - thickness) / 2).toFixed(1)}" width="${(barWidth * share).toFixed(1)}" height="${thickness.toFixed(1)}" rx="${(thickness / 2).toFixed(1)}" fill="${accent}"/>
+      <text x="${box.x + box.width - inset}" y="${(y + rowHeight / 2 + 7).toFixed(1)}" text-anchor="end" fill="#f3f7f5" font-size="20" font-weight="700">${truncate(split.pace, 8)}</text>
+    </g>`
+  }).join('')
+  return `<g>
+    <rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" rx="36" fill="#101c19" stroke="#ffffff" stroke-opacity="0.1"/>
+    <text x="${box.x + inset}" y="${box.y + 56}" class="label">${truncate(heading.toUpperCase(), 28)}</text>
+    ${rows}
+  </g>`
+}
+
 function metricMarkup(metrics: ActivityShareMetric[], x: number, y: number, width: number, columns: number, valueSize: number): string {
   const gap = 22
   const cellWidth = (width - gap * (columns - 1)) / columns
@@ -269,8 +334,10 @@ function basemapMarkup(basemap: ActivityShareBasemap, box: ActivityRouteBox): st
     <rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" rx="36" fill="none" stroke="#ffffff" stroke-opacity="0.12"/>`
 }
 
-function mapMarkup(route: ActivitySharePoint[], box: ActivityRouteBox, accent: string, basemap?: ActivityShareBasemap | null): string {
+function mapMarkup(route: ActivitySharePoint[], box: ActivityRouteBox, accent: string, basemap?: ActivityShareBasemap | null, options?: ActivityShareCardOptions): string {
   const path = activityShareRoutePath(route, box, basemap?.projection)
+  if (!path && options?.splits?.some(split => split.seconds > 0))
+    return splitsMarkup(options.splits, box, accent, options.splitsLabel || 'SPLITS')
   const hasRoute = path.length > 0
   const start = hasRoute ? path.match(/^M([\d.]+) ([\d.]+)/) : null
   const end = hasRoute ? path.match(/L([\d.]+) ([\d.]+)$/) ?? start : null
@@ -352,49 +419,34 @@ function metadataMarkup(options: ActivityShareCardOptions, x: number, y: number,
 
 function landscapeCard(options: ActivityShareCardOptions, accent: string): string {
   const map = ACTIVITY_SHARE_MAP_BOXES.landscape
-  const metrics = [
-    { label: 'DISTANCE', value: options.distance },
-    { label: 'MOVING TIME', value: options.duration },
-    { label: 'AVG PACE', value: options.pace || '—' },
-    { label: 'ELEVATION', value: options.elevation || '—' },
-  ]
+  const metrics = cardMetrics(options)
   return `${brandMarkup(options, 72, 66, accent)}
   <text x="72" y="158" class="accent kicker">${truncate(options.activityType.toUpperCase(), 28)}</text>
   <text x="72" y="220" class="title" font-size="57">${truncate(options.title, 26)}</text>
   ${metadataMarkup(options, 72, 262, 42)}
   ${metricMarkup(metrics, 72, 350, 520, 2, 38)}
-  ${mapMarkup(options.route, map, accent, basemapFor(options, 'landscape'))}`
+  ${mapMarkup(options.route, map, accent, basemapFor(options, 'landscape'), options)}`
 }
 
 function squareCard(options: ActivityShareCardOptions, accent: string): string {
   const map = ACTIVITY_SHARE_MAP_BOXES.square
-  const metrics = [
-    { label: 'DISTANCE', value: options.distance },
-    { label: 'MOVING TIME', value: options.duration },
-    { label: 'AVG PACE', value: options.pace || '—' },
-    { label: 'ELEVATION', value: options.elevation || '—' },
-  ]
+  const metrics = cardMetrics(options)
   return `${brandMarkup(options, 72, 68, accent)}
   <text x="72" y="158" class="accent kicker">${truncate(options.activityType.toUpperCase(), 30)}</text>
   <text x="72" y="222" class="title" font-size="60">${truncate(options.title, 31)}</text>
   ${metadataMarkup(options, 72, 258, 66)}
-  ${mapMarkup(options.route, map, accent, basemapFor(options, 'square'))}
+  ${mapMarkup(options.route, map, accent, basemapFor(options, 'square'), options)}
   ${metricMarkup(metrics, 72, 842, 936, 4, 34)}`
 }
 
 function storyCard(options: ActivityShareCardOptions, accent: string): string {
   const map = ACTIVITY_SHARE_MAP_BOXES.story
-  const metrics = [
-    { label: 'DISTANCE', value: options.distance },
-    { label: 'MOVING TIME', value: options.duration },
-    { label: 'AVG PACE', value: options.pace || '—' },
-    { label: 'ELEVATION', value: options.elevation || '—' },
-  ]
+  const metrics = cardMetrics(options)
   return `${brandMarkup(options, 72, 94, accent)}
   <text x="72" y="226" class="accent kicker">${truncate(options.activityType.toUpperCase(), 30)}</text>
   <text x="72" y="310" class="title" font-size="72">${truncate(options.title, 27)}</text>
   ${metadataMarkup(options, 72, 362, 68)}
-  ${mapMarkup(options.route, map, accent, basemapFor(options, 'story'))}
+  ${mapMarkup(options.route, map, accent, basemapFor(options, 'story'), options)}
   ${metricMarkup(metrics, 72, 1504, 936, 2, 48)}
   <text x="72" y="1842" fill="#71817b" font-size="18" font-weight="650" letter-spacing="1.5">MOVE OUTSIDE. CLAIM YOUR LOOP.</text>`
 }
