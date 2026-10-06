@@ -55,6 +55,22 @@ const svg = activityShareCardSvg({
 
 Use `square` for feed posts, `story` for vertical stories, and `landscape` for link previews. `activityShareCardFileName()` creates a safe download name for the selected preset.
 
+To draw the route on a real map, fetch a basemap for the same preset and pass it in. The tiles are inlined as `data:` URIs, so the SVG still renders in an `<img>`, on a canvas or as a file, and the route is projected exactly as the tiles are:
+
+```typescript
+import { activityShareBasemap, activityShareCardSvg } from 'ts-images/activity-card'
+
+const basemap = await activityShareBasemap(recordedPoints, {
+  preset: 'landscape',
+  tileUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  attribution: 'Esri, Maxar, Earthstar Geographics',
+})
+
+const svg = activityShareCardSvg({ ...card, preset: 'landscape', basemap })
+```
+
+The zoom is chosen so at least two tile pixels sit under every card pixel (`pixelRatio`, default 2), which keeps the map sharp on retina screens and in 2x exports. Pass `tileSize: 512` for @2x tiles, or an array of URLs to stack layers such as a base map and its labels. A tile that fails is left out, and if none load the result is `null` and the plain card is drawn. A map shows where the route is, so add one only when the person sharing is the person who ran it.
+
 ### CLI
 
 ```bash

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { ACTIVITY_SHARE_CARD_PRESETS, activityShareCardFileName, activityShareCardSvg, activityShareRoutePath } from '../src/activity-card'
+import { ACTIVITY_SHARE_CARD_PRESETS, activityShareBasemap, activityShareCardFileName, activityShareCardSvg, activityShareProjection, activityShareRoutePath } from '../src/activity-card'
 
 const route = [
   { lat: 37.7749, lng: -122.4194 },
@@ -83,5 +83,78 @@ describe('activity share cards', () => {
   test('creates safe, predictable download names', () => {
     expect(activityShareCardFileName('Café Ridge Run', 'story')).toBe('cafe-ridge-run-story.png')
     expect(activityShareCardFileName('!!!')).toBe('activity-square.png')
+  })
+
+  test('fits the route inside the map box when projected for a basemap', () => {
+    const projection = activityShareProjection(route, 'landscape')!
+    const path = activityShareRoutePath(route, { x: 664, y: 72, width: 464, height: 486 }, projection)
+    const coords = [...path.matchAll(/[ML]([\d.]+) ([\d.]+)/g)].map(m => [Number(m[1]), Number(m[2])] as const)
+    expect(coords.length).toBe(route.length)
+    for (const [x, y] of coords) {
+      expect(x).toBeGreaterThanOrEqual(664 + 60 - 0.1)
+      expect(x).toBeLessThanOrEqual(664 + 464 - 60 + 0.1)
+      expect(y).toBeGreaterThanOrEqual(72 + 60 - 0.1)
+      expect(y).toBeLessThanOrEqual(72 + 486 - 60 + 0.1)
+    }
+    // North stays up: the northernmost point is drawn highest.
+    expect(coords[2]![1]).toBeLessThan(coords[0]![1])
+  })
+
+  test('fetches the tiles that cover the map box and inlines them', async () => {
+    const requested: string[] = []
+    const fetch = async (url: string) => {
+      requested.push(url)
+      return new Response(new Uint8Array([137, 80, 78, 71]), { headers: { 'content-type': 'image/png' } })
+    }
+    const basemap = (await activityShareBasemap(route, { attribution: '© OpenStreetMap', fetch, preset: 'square', tileSize: 512, tileUrl: 'https://{s}.tiles.test/{z}/{x}/{y}@2x.png' }))!
+    expect(basemap.preset).toBe('square')
+    expect(basemap.tiles.length).toBe(requested.length)
+    expect(requested[0]).toMatch(/^https:\/\/[abc]\.tiles\.test\/\d+\/\d+\/\d+@2x\.png$/)
+    for (const tile of basemap.tiles) {
+      expect(tile.href).toStartWith('data:image/png;base64,')
+      // Two tile pixels under every card pixel, and no more detail than that.
+      expect(tile.size).toBeGreaterThan(128)
+      expect(tile.size).toBeLessThanOrEqual(256)
+    }
+    // Together the tiles cover the whole box.
+    const box = { x: 72, y: 284, width: 936, height: 476 }
+    expect(Math.min(...basemap.tiles.map(t => t.x))).toBeLessThanOrEqual(box.x)
+    expect(Math.min(...basemap.tiles.map(t => t.y))).toBeLessThanOrEqual(box.y)
+    expect(Math.max(...basemap.tiles.map(t => t.x + t.size))).toBeGreaterThanOrEqual(box.x + box.width)
+    expect(Math.max(...basemap.tiles.map(t => t.y + t.size))).toBeGreaterThanOrEqual(box.y + box.height)
+
+    const svg = activityShareCardSvg({ activityType: 'Run', basemap, distance: '5 km', duration: '25:00', route, title: 'Loop' })
+    expect(svg).toContain('clip-path="url(#map-clip)"')
+    expect(svg).toContain('<image href="data:image/png;base64,')
+    expect(svg).toContain('© OpenStreetMap')
+    expect(svg).toContain('id="activity-route"')
+  })
+
+  test('stacks layers in order, each over the same tiles', async () => {
+    const requested: string[] = []
+    const fetch = async (url: string) => {
+      requested.push(url)
+      return new Response(new Uint8Array([1]), { headers: { 'content-type': 'image/png' } })
+    }
+    // Long enough that the fit, not the zoom limit, decides the scale.
+    const coast = [{ lat: 32.94, lng: -117.26 }, { lat: 32.85, lng: -117.27 }, { lat: 32.76, lng: -117.25 }]
+    const basemap = (await activityShareBasemap(coast, { fetch, preset: 'landscape', tileUrl: ['https://base.test/{z}/{y}/{x}', 'https://labels.test/{z}/{y}/{x}'] }))!
+    const half = requested.length / 2
+    expect(requested.slice(0, half).every(url => url.startsWith('https://base.test/'))).toBe(true)
+    expect(requested.slice(half).every(url => url.startsWith('https://labels.test/'))).toBe(true)
+    expect(requested.slice(half).map(url => url.replace('labels', 'base'))).toEqual(requested.slice(0, half))
+    // 256px tiles at the default pixel ratio of 2 are drawn at most 128 wide.
+    expect(basemap.tiles[0]!.size).toBeLessThanOrEqual(128)
+  })
+
+  test('draws the plain card when the basemap belongs to another preset or no tile loads', async () => {
+    const fetch = async () => new Response(new Uint8Array([1]), { headers: { 'content-type': 'image/png' } })
+    const basemap = await activityShareBasemap(route, { fetch, preset: 'story', tileUrl: 'https://tiles.test/{z}/{x}/{y}.png' })
+    const svg = activityShareCardSvg({ activityType: 'Run', basemap, distance: '5 km', duration: '25:00', preset: 'square', route, title: 'Loop' })
+    expect(svg).not.toContain('<image')
+
+    const failing = async () => new Response('nope', { status: 503 })
+    expect(await activityShareBasemap(route, { fetch: failing, tileUrl: 'https://tiles.test/{z}/{x}/{y}.png' })).toBeNull()
+    expect(await activityShareBasemap([], { fetch, tileUrl: 'https://tiles.test/{z}/{x}/{y}.png' })).toBeNull()
   })
 })

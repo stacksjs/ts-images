@@ -32,6 +32,62 @@ export interface ActivityShareCardOptions {
   preset?: ActivityShareCardPreset
   route: ActivitySharePoint[]
   title: string
+  /**
+   * Map tiles to draw under the route, from `activityShareBasemap()`. Without
+   * one the route is drawn on its own over a plain panel. With one the route is
+   * projected exactly as the tiles are, so it sits on the streets it ran.
+   */
+  basemap?: ActivityShareBasemap | null
+}
+
+/**
+ * Where the map box's top-left corner is in Web Mercator (the world as a unit
+ * square, 0..1 on each axis), and how many card pixels one unit spans.
+ */
+export interface ActivityShareProjection {
+  left: number
+  scale: number
+  top: number
+}
+
+export interface ActivityShareTile {
+  /** The tile image, normally a `data:` URI so the card stays self-contained. */
+  href: string
+  size: number
+  x: number
+  y: number
+}
+
+export interface ActivityShareBasemap {
+  /** Plain text, drawn in the map's corner, e.g. `© OpenStreetMap © CARTO`. */
+  attribution?: string
+  preset: ActivityShareCardPreset
+  projection: ActivityShareProjection
+  tiles: ActivityShareTile[]
+}
+
+/** A tile URL template with `{z}`, `{x}`, `{y}` and optionally `{s}` (a, b or c), or a function of the tile. */
+export type ActivityShareTileSource = string | ((tile: { x: number, y: number, z: number }) => string)
+
+export interface ActivityShareBasemapOptions {
+  attribution?: string
+  /** Defaults to `globalThis.fetch`. */
+  fetch?: (url: string) => Promise<Response>
+  /** The most detailed tile zoom to ask for. Defaults to 16. */
+  maxZoom?: number
+  /**
+   * Tile pixels to put under every card pixel. Defaults to 2, so a card
+   * exported at twice its size, or viewed on a retina screen, stays sharp.
+   */
+  pixelRatio?: number
+  preset?: ActivityShareCardPreset
+  /**
+   * The tiles, or several layers of them drawn bottom first, such as a base
+   * map and its labels. Every layer must use the same tiling and `tileSize`.
+   */
+  tileUrl: ActivityShareTileSource | ActivityShareTileSource[]
+  /** The width of one fetched tile in pixels: 256, or 512 for @2x tiles. Defaults to 256. */
+  tileSize?: number
 }
 
 export interface ActivityShareCardSize {
@@ -54,6 +110,18 @@ export const ACTIVITY_SHARE_CARD_PRESETS: Readonly<Record<ActivityShareCardPrese
 })
 
 const DEFAULT_ACCENT = '#34d399'
+
+/** Where each preset draws its map. The basemap is fetched for one of these. */
+const MAP_BOXES: Readonly<Record<ActivityShareCardPreset, Readonly<ActivityRouteBox>>> = Object.freeze({
+  landscape: Object.freeze({ x: 664, y: 72, width: 464, height: 486, padding: 60 }),
+  square: Object.freeze({ x: 72, y: 284, width: 936, height: 476, padding: 62 }),
+  story: Object.freeze({ x: 72, y: 432, width: 936, height: 930, padding: 90 }),
+})
+
+/** A basemap only fits the box it was fetched for, so another preset's is ignored. */
+function basemapFor(options: ActivityShareCardOptions, preset: ActivityShareCardPreset): ActivityShareBasemap | null {
+  return options.basemap && options.basemap.preset === preset ? options.basemap : null
+}
 
 function escapeXml(value: string): string {
   return value
@@ -90,10 +158,28 @@ function finiteRoute(route: ActivitySharePoint[]): ActivitySharePoint[] {
   return Array.from({ length: 320 }, (_, index) => valid[Math.round(index * step)]!)
 }
 
-export function activityShareRoutePath(route: ActivitySharePoint[], box: ActivityRouteBox): string {
+function mercatorX(lng: number): number {
+  return (lng + 180) / 360
+}
+
+function mercatorY(lat: number): number {
+  const clamped = Math.max(-85.05112878, Math.min(85.05112878, lat))
+  const radians = clamped * Math.PI / 180
+  return (1 - Math.log(Math.tan(Math.PI / 4 + radians / 2)) / Math.PI) / 2
+}
+
+export function activityShareRoutePath(route: ActivitySharePoint[], box: ActivityRouteBox, projection?: ActivityShareProjection | null): string {
   const points = finiteRoute(route)
   if (points.length === 0)
     return ''
+
+  if (projection) {
+    return points.map((point, index) => {
+      const x = box.x + (mercatorX(point.lng) - projection.left) * projection.scale
+      const y = box.y + (mercatorY(point.lat) - projection.top) * projection.scale
+      return `${index === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`
+    }).join(' ')
+  }
 
   const padding = Math.max(0, box.padding ?? 48)
   const availableWidth = Math.max(1, box.width - padding * 2)
@@ -144,8 +230,24 @@ function metricMarkup(metrics: ActivityShareMetric[], x: number, y: number, widt
   }).join('')
 }
 
-function mapMarkup(route: ActivitySharePoint[], box: ActivityRouteBox, accent: string): string {
-  const path = activityShareRoutePath(route, box)
+function basemapMarkup(basemap: ActivityShareBasemap, box: ActivityRouteBox): string {
+  // Each tile is drawn half a pixel wider than its slot, so no hairline of the
+  // panel shows between neighbours once the card is rasterised.
+  const tiles = basemap.tiles.map(tile => `<image href="${escapeXml(tile.href)}" x="${tile.x.toFixed(2)}" y="${tile.y.toFixed(2)}" width="${(tile.size + 0.5).toFixed(2)}" height="${(tile.size + 0.5).toFixed(2)}" preserveAspectRatio="none"/>`).join('')
+  const attribution = basemap.attribution
+    ? `<text x="${box.x + box.width - 22}" y="${box.y + box.height - 18}" text-anchor="end" fill="#f3f7f5" fill-opacity="0.62" font-size="13" font-weight="560">${truncate(basemap.attribution, 64)}</text>`
+    : ''
+  return `<clipPath id="map-clip"><rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" rx="36"/></clipPath>
+    <rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" rx="36" fill="#101c19"/>
+    <g clip-path="url(#map-clip)">${tiles}
+      <rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="url(#map-shade)"/>
+    </g>
+    ${attribution}
+    <rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" rx="36" fill="none" stroke="#ffffff" stroke-opacity="0.12"/>`
+}
+
+function mapMarkup(route: ActivitySharePoint[], box: ActivityRouteBox, accent: string, basemap?: ActivityShareBasemap | null): string {
+  const path = activityShareRoutePath(route, box, basemap?.projection)
   const hasRoute = path.length > 0
   const start = hasRoute ? path.match(/^M([\d.]+) ([\d.]+)/) : null
   const end = hasRoute ? path.match(/L([\d.]+) ([\d.]+)$/) ?? start : null
@@ -156,6 +258,9 @@ function mapMarkup(route: ActivitySharePoint[], box: ActivityRouteBox, accent: s
     <circle cx="${start?.[1]}" cy="${start?.[2]}" r="${radius}" fill="#f3f7f5" stroke="#101c19" stroke-width="7"/>
     <circle cx="${end?.[1]}" cy="${end?.[2]}" r="${radius}" fill="${accent}" stroke="#101c19" stroke-width="7"/>`
     : `<text x="${box.x + box.width / 2}" y="${box.y + box.height / 2}" text-anchor="middle" class="label">ROUTE UNAVAILABLE</text>`
+  if (basemap && basemap.tiles.length > 0)
+    return `<g>${basemapMarkup(basemap, box)}${routeMarkup}</g>`
+
   return `<g>
     <rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" rx="36" fill="#101c19" stroke="#ffffff" stroke-opacity="0.1"/>
     <path d="M${box.x - 20} ${box.y + box.height * 0.32} C${box.x + box.width * 0.22} ${box.y + box.height * 0.08}, ${box.x + box.width * 0.6} ${box.y + box.height * 0.54}, ${box.x + box.width + 30} ${box.y + box.height * 0.18}" fill="none" stroke="#ffffff" stroke-opacity="0.055" stroke-width="3"/>
@@ -181,6 +286,11 @@ function defs(accent: string): string {
       <stop offset="0" stop-color="#07110f"/>
       <stop offset="0.62" stop-color="#0b1714"/>
       <stop offset="1" stop-color="#10251e"/>
+    </linearGradient>
+    <linearGradient id="map-shade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#07110f" stop-opacity="0.05"/>
+      <stop offset="0.75" stop-color="#07110f" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#07110f" stop-opacity="0.45"/>
     </linearGradient>
     <radialGradient id="glow" cx="100%" cy="0%" r="85%">
       <stop offset="0" stop-color="${accent}" stop-opacity="0.2"/>
@@ -218,7 +328,7 @@ function metadataMarkup(options: ActivityShareCardOptions, x: number, y: number,
 }
 
 function landscapeCard(options: ActivityShareCardOptions, accent: string): string {
-  const map = { x: 664, y: 72, width: 464, height: 486, padding: 60 }
+  const map = MAP_BOXES.landscape
   const metrics = [
     { label: 'DISTANCE', value: options.distance },
     { label: 'MOVING TIME', value: options.duration },
@@ -230,11 +340,11 @@ function landscapeCard(options: ActivityShareCardOptions, accent: string): strin
   <text x="72" y="220" class="title" font-size="57">${truncate(options.title, 26)}</text>
   ${metadataMarkup(options, 72, 262, 42)}
   ${metricMarkup(metrics, 72, 350, 520, 2, 38)}
-  ${mapMarkup(options.route, map, accent)}`
+  ${mapMarkup(options.route, map, accent, basemapFor(options, 'landscape'))}`
 }
 
 function squareCard(options: ActivityShareCardOptions, accent: string): string {
-  const map = { x: 72, y: 284, width: 936, height: 476, padding: 62 }
+  const map = MAP_BOXES.square
   const metrics = [
     { label: 'DISTANCE', value: options.distance },
     { label: 'MOVING TIME', value: options.duration },
@@ -245,12 +355,12 @@ function squareCard(options: ActivityShareCardOptions, accent: string): string {
   <text x="72" y="158" class="accent kicker">${truncate(options.activityType.toUpperCase(), 30)}</text>
   <text x="72" y="222" class="title" font-size="60">${truncate(options.title, 31)}</text>
   ${metadataMarkup(options, 72, 258, 66)}
-  ${mapMarkup(options.route, map, accent)}
+  ${mapMarkup(options.route, map, accent, basemapFor(options, 'square'))}
   ${metricMarkup(metrics, 72, 842, 936, 4, 34)}`
 }
 
 function storyCard(options: ActivityShareCardOptions, accent: string): string {
-  const map = { x: 72, y: 432, width: 936, height: 930, padding: 90 }
+  const map = MAP_BOXES.story
   const metrics = [
     { label: 'DISTANCE', value: options.distance },
     { label: 'MOVING TIME', value: options.duration },
@@ -261,7 +371,7 @@ function storyCard(options: ActivityShareCardOptions, accent: string): string {
   <text x="72" y="226" class="accent kicker">${truncate(options.activityType.toUpperCase(), 30)}</text>
   <text x="72" y="310" class="title" font-size="72">${truncate(options.title, 27)}</text>
   ${metadataMarkup(options, 72, 362, 68)}
-  ${mapMarkup(options.route, map, accent)}
+  ${mapMarkup(options.route, map, accent, basemapFor(options, 'story'))}
   ${metricMarkup(metrics, 72, 1504, 936, 2, 48)}
   <text x="72" y="1842" fill="#71817b" font-size="18" font-weight="650" letter-spacing="1.5">MOVE OUTSIDE. CLAIM YOUR LOOP.</text>`
 }
@@ -285,4 +395,116 @@ export function activityShareCardSvg(options: ActivityShareCardOptions): string 
   <rect width="${size.width}" height="${size.height}" fill="url(#glow)"/>
   ${content}
 </svg>`
+}
+
+/** Fits the route into a preset's map box: the same fit the card draws it with. */
+export function activityShareProjection(route: ActivitySharePoint[], preset: ActivityShareCardPreset = 'square', maxZoom = 16): ActivityShareProjection | null {
+  const points = finiteRoute(route)
+  if (points.length === 0)
+    return null
+
+  const box = MAP_BOXES[preset]
+  const padding = box.padding ?? 48
+  const xs = points.map(point => mercatorX(point.lng))
+  const ys = points.map(point => mercatorY(point.lat))
+  const minX = Math.min(...xs)
+  const maxX = Math.max(...xs)
+  const minY = Math.min(...ys)
+  const maxY = Math.max(...ys)
+  const fit = Math.min(
+    (box.width - padding * 2) / Math.max(maxX - minX, Number.EPSILON),
+    (box.height - padding * 2) / Math.max(maxY - minY, Number.EPSILON),
+  )
+  // Never closer than the most detailed tiles, never so far out that the
+  // world no longer covers the box.
+  const scale = Math.max(Math.max(box.width, box.height), Math.min(fit, 256 * 2 ** maxZoom))
+  return {
+    left: (minX + maxX) / 2 - box.width / 2 / scale,
+    scale,
+    top: (minY + maxY) / 2 - box.height / 2 / scale,
+  }
+}
+
+function tileHref(template: ActivityShareTileSource, tile: { x: number, y: number, z: number }): string {
+  if (typeof template === 'function')
+    return template(tile)
+  return template
+    .replaceAll('{z}', String(tile.z))
+    .replaceAll('{x}', String(tile.x))
+    .replaceAll('{y}', String(tile.y))
+    .replaceAll('{s}', 'abc'[(tile.x + tile.y) % 3]!)
+}
+
+function base64(bytes: Uint8Array): string {
+  if (typeof Buffer !== 'undefined')
+    return Buffer.from(bytes).toString('base64')
+  let binary = ''
+  for (let index = 0; index < bytes.length; index += 0x8000)
+    binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000))
+  return btoa(binary)
+}
+
+/**
+ * Fetches the map tiles a card needs to draw the route on a real map, and
+ * inlines them as `data:` URIs so the SVG renders anywhere: in an `<img>`, on a
+ * canvas, or as a file. Pass the result as `basemap` with the same `preset`.
+ *
+ * A tile that fails to load is left out, and if none load this resolves to
+ * `null`, which draws the plain card. A basemap shows where the route is, so
+ * only add one when the person sharing is the person who ran it.
+ */
+export async function activityShareBasemap(route: ActivitySharePoint[], options: ActivityShareBasemapOptions): Promise<ActivityShareBasemap | null> {
+  const preset = options.preset || 'square'
+  const maxZoom = Math.max(0, Math.min(22, Math.round(options.maxZoom ?? 16)))
+  const projection = activityShareProjection(route, preset, maxZoom)
+  const doFetch = options.fetch ?? globalThis.fetch?.bind(globalThis)
+  if (!projection || !doFetch)
+    return null
+
+  const box = MAP_BOXES[preset]
+  const tileSize = Math.max(1, options.tileSize ?? 256)
+  const pixelRatio = Math.max(0.25, options.pixelRatio ?? 2)
+  const sources = Array.isArray(options.tileUrl) ? options.tileUrl : [options.tileUrl]
+  // The least detailed zoom that still puts `pixelRatio` tile pixels under
+  // every card pixel.
+  const zoom = Math.max(0, Math.min(maxZoom, Math.ceil(Math.log2(projection.scale * pixelRatio / tileSize))))
+  const count = 2 ** zoom
+  const size = projection.scale / count
+  const right = projection.left + box.width / projection.scale
+  const bottom = projection.top + box.height / projection.scale
+  const wanted: { source: ActivityShareTileSource, x: number, y: number, z: number, at: { x: number, y: number } }[] = []
+  for (const source of sources) {
+    for (let ty = Math.max(0, Math.floor(projection.top * count)); ty <= Math.min(count - 1, Math.floor(bottom * count)); ty++) {
+      for (let tx = Math.floor(projection.left * count); tx <= Math.floor(right * count); tx++) {
+        wanted.push({
+          source,
+          x: ((tx % count) + count) % count,
+          y: ty,
+          z: zoom,
+          at: { x: box.x + (tx / count - projection.left) * projection.scale, y: box.y + (ty / count - projection.top) * projection.scale },
+        })
+      }
+    }
+  }
+
+  const tiles = await Promise.all(wanted.map(async (tile): Promise<ActivityShareTile | null> => {
+    try {
+      const response = await doFetch(tileHref(tile.source, tile))
+      if (!response.ok)
+        return null
+      const type = response.headers.get('content-type')?.split(';')[0]?.trim() || 'image/png'
+      if (!type.startsWith('image/'))
+        return null
+      const bytes = new Uint8Array(await response.arrayBuffer())
+      return { href: `data:${type};base64,${base64(bytes)}`, size, x: tile.at.x, y: tile.at.y }
+    }
+    catch {
+      return null
+    }
+  }))
+
+  const loaded = tiles.filter((tile): tile is ActivityShareTile => tile !== null)
+  if (loaded.length === 0)
+    return null
+  return { attribution: options.attribution, preset, projection, tiles: loaded }
 }
