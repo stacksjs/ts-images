@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.27...v0.2.28)
+
+## ✨ Features
+
+- **activity-card**: the map credit sits on a pill, in a reserved corner ([b2a5e31](https://github.com/stacksjs/ts-images/commit/b2a5e31)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.28 ([8574195](https://github.com/stacksjs/ts-images/commit/8574195)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.26...v0.2.27)
 
 ## ✨ Features
