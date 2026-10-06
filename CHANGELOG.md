@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.26...v0.2.27)
+
+## ✨ Features
+
+- **activity-card**: a vector basemap, drawn from the map's own style ([0f81414](https://github.com/stacksjs/ts-images/commit/0f81414)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.27 ([363c12c](https://github.com/stacksjs/ts-images/commit/363c12c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.25...v0.2.26)
 
 ## ✨ Features
