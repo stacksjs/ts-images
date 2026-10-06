@@ -12,7 +12,7 @@
     },
     "packages/bun-plugin": {
       "name": "bun-plugin-imgx",
-      "version": "0.2.28",
+      "version": "0.2.29",
       "dependencies": {
         "ts-images": "workspace:*",
       },
@@ -22,7 +22,7 @@
     },
     "packages/ts-images": {
       "name": "ts-images",
-      "version": "0.2.28",
+      "version": "0.2.29",
       "bin": {
         "imgx": "./dist/bin/cli.js",
       },
@@ -43,7 +43,7 @@
     },
     "packages/vscode": {
       "name": "@stacksjs/imgx-vscode",
-      "version": "0.2.28",
+      "version": "0.2.29",
       "bin": {
         "imgx": "./dist/bin/cli.js",
       },

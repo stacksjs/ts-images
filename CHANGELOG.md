@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.28...v0.2.29)
+
+## ✨ Features
+
+- **activity-card**: indoor runs show their splits and own metrics ([cef78d7](https://github.com/stacksjs/ts-images/commit/cef78d7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.29 ([30ba660](https://github.com/stacksjs/ts-images/commit/30ba660)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.27...v0.2.28)
 
 ## ✨ Features
