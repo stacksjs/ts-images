@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { ACTIVITY_SHARE_CARD_PRESETS, activityShareBasemap, activityShareCardFileName, activityShareCardSvg, activityShareProjection, activityShareRoutePath } from '../src/activity-card'
+import { ACTIVITY_SHARE_CARD_PRESETS, ACTIVITY_SHARE_MAP_BOXES, activityShareBasemap, activityShareCardFileName, activityShareCardSvg, activityShareProjection, activityShareRoutePath } from '../src/activity-card'
 
 const route = [
   { lat: 37.7749, lng: -122.4194 },
@@ -108,9 +108,9 @@ describe('activity share cards', () => {
     }
     const basemap = (await activityShareBasemap(route, { attribution: '© OpenStreetMap', fetch, preset: 'square', tileSize: 512, tileUrl: 'https://{s}.tiles.test/{z}/{x}/{y}@2x.png' }))!
     expect(basemap.preset).toBe('square')
-    expect(basemap.tiles.length).toBe(requested.length)
+    expect(basemap.tiles!.length).toBe(requested.length)
     expect(requested[0]).toMatch(/^https:\/\/[abc]\.tiles\.test\/\d+\/\d+\/\d+@2x\.png$/)
-    for (const tile of basemap.tiles) {
+    for (const tile of basemap.tiles!) {
       expect(tile.href).toStartWith('data:image/png;base64,')
       // Two tile pixels under every card pixel, and no more detail than that.
       expect(tile.size).toBeGreaterThan(128)
@@ -118,10 +118,10 @@ describe('activity share cards', () => {
     }
     // Together the tiles cover the whole box.
     const box = { x: 72, y: 284, width: 936, height: 476 }
-    expect(Math.min(...basemap.tiles.map(t => t.x))).toBeLessThanOrEqual(box.x)
-    expect(Math.min(...basemap.tiles.map(t => t.y))).toBeLessThanOrEqual(box.y)
-    expect(Math.max(...basemap.tiles.map(t => t.x + t.size))).toBeGreaterThanOrEqual(box.x + box.width)
-    expect(Math.max(...basemap.tiles.map(t => t.y + t.size))).toBeGreaterThanOrEqual(box.y + box.height)
+    expect(Math.min(...basemap.tiles!.map(t => t.x))).toBeLessThanOrEqual(box.x)
+    expect(Math.min(...basemap.tiles!.map(t => t.y))).toBeLessThanOrEqual(box.y)
+    expect(Math.max(...basemap.tiles!.map(t => t.x + t.size))).toBeGreaterThanOrEqual(box.x + box.width)
+    expect(Math.max(...basemap.tiles!.map(t => t.y + t.size))).toBeGreaterThanOrEqual(box.y + box.height)
 
     const svg = activityShareCardSvg({ activityType: 'Run', basemap, distance: '5 km', duration: '25:00', route, title: 'Loop' })
     expect(svg).toContain('clip-path="url(#map-clip)"')
@@ -144,7 +144,7 @@ describe('activity share cards', () => {
     expect(requested.slice(half).every(url => url.startsWith('https://labels.test/'))).toBe(true)
     expect(requested.slice(half).map(url => url.replace('labels', 'base'))).toEqual(requested.slice(0, half))
     // 256px tiles at the default pixel ratio of 2 are drawn at most 128 wide.
-    expect(basemap.tiles[0]!.size).toBeLessThanOrEqual(128)
+    expect(basemap.tiles![0]!.size).toBeLessThanOrEqual(128)
   })
 
   test('draws the plain card when the basemap belongs to another preset or no tile loads', async () => {
@@ -156,5 +156,16 @@ describe('activity share cards', () => {
     const failing = async () => new Response('nope', { status: 503 })
     expect(await activityShareBasemap(route, { fetch: failing, tileUrl: 'https://tiles.test/{z}/{x}/{y}.png' })).toBeNull()
     expect(await activityShareBasemap([], { fetch, tileUrl: 'https://tiles.test/{z}/{x}/{y}.png' })).toBeNull()
+  })
+
+  test('draws a vector basemap given as markup, in the map box\'s coordinates', () => {
+    const projection = activityShareProjection(route, 'story')!
+    const box = ACTIVITY_SHARE_MAP_BOXES.story
+    const markup = `<rect data-test-map width="${box.width}" height="${box.height}" fill="#0b1220"/>`
+    const svg = activityShareCardSvg({ activityType: 'Run', basemap: { attribution: '© OpenStreetMap', markup, preset: 'story', projection }, distance: '5 km', duration: '25:00', preset: 'story', route, title: 'Loop' })
+    expect(svg).toContain(`<g transform="translate(${box.x} ${box.y})"><rect data-test-map`)
+    expect(svg).toContain('clip-path="url(#map-clip)"')
+    expect(svg).not.toContain('<image')
+    expect(svg).toContain('© OpenStreetMap')
   })
 })
