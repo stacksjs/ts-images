@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { ACTIVITY_SHARE_CARD_PRESETS, ACTIVITY_SHARE_MAP_BOXES, activityShareBasemap, activityShareCardFileName, activityShareCardSvg, activityShareProjection, activityShareRoutePath } from '../src/activity-card'
+import { ACTIVITY_SHARE_CARD_PRESETS, ACTIVITY_SHARE_MAP_BOXES, activityShareBasemap, activityShareMapReserve, activityShareCardFileName, activityShareCardSvg, activityShareProjection, activityShareRoutePath } from '../src/activity-card'
 
 const route = [
   { lat: 37.7749, lng: -122.4194 },
@@ -167,5 +167,12 @@ describe('activity share cards', () => {
     expect(svg).toContain('clip-path="url(#map-clip)"')
     expect(svg).not.toContain('<image')
     expect(svg).toContain('© OpenStreetMap')
+    // The credit's pill sits inside the reserved corner.
+    const [left, top, right, bottom] = activityShareMapReserve('story')
+    const pill = svg.match(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="28" rx="14"/)!
+    expect(Number(pill[1]) - box.x).toBeGreaterThanOrEqual(left)
+    expect(Number(pill[2]) - box.y).toBeGreaterThanOrEqual(top)
+    expect(Number(pill[1]) + Number(pill[3]) - box.x).toBeLessThanOrEqual(right)
+    expect(Number(pill[2]) + 28 - box.y).toBeLessThanOrEqual(bottom)
   })
 })

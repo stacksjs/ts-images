@@ -126,6 +126,16 @@ export const ACTIVITY_SHARE_MAP_BOXES: Readonly<Record<ActivityShareCardPreset, 
   story: Object.freeze({ x: 72, y: 432, width: 936, height: 930, padding: 90 }),
 })
 
+/**
+ * The corner of a preset's map box, in the box's own coordinates
+ * (`[left, top, right, bottom]`), where the card draws the map's credit. A
+ * renderer that places labels should keep them out of it.
+ */
+export function activityShareMapReserve(preset: ActivityShareCardPreset = 'square'): [number, number, number, number] {
+  const box = ACTIVITY_SHARE_MAP_BOXES[preset]
+  return [box.width - 340, box.height - 48, box.width, box.height]
+}
+
 /** A basemap only fits the box it was fetched for, so another preset's is ignored. */
 function basemapFor(options: ActivityShareCardOptions, preset: ActivityShareCardPreset): ActivityShareBasemap | null {
   return options.basemap && options.basemap.preset === preset ? options.basemap : null
@@ -242,8 +252,13 @@ function basemapMarkup(basemap: ActivityShareBasemap, box: ActivityRouteBox): st
   // Each tile is drawn half a pixel wider than its slot, so no hairline of the
   // panel shows between neighbours once the card is rasterised.
   const tiles = (basemap.tiles ?? []).map(tile => `<image href="${escapeXml(tile.href)}" x="${tile.x.toFixed(2)}" y="${tile.y.toFixed(2)}" width="${(tile.size + 0.5).toFixed(2)}" height="${(tile.size + 0.5).toFixed(2)}" preserveAspectRatio="none"/>`).join('')
-  const attribution = basemap.attribution
-    ? `<text x="${box.x + box.width - 22}" y="${box.y + box.height - 18}" text-anchor="end" fill="#f3f7f5" fill-opacity="0.62" font-size="13" font-weight="560">${truncate(basemap.attribution, 64)}</text>`
+  // The credit sits on a pill of the card's own ground, so it stays legible
+  // over whatever the map has in that corner.
+  const credit = basemap.attribution ? truncate(basemap.attribution, 64) : ''
+  const creditWidth = credit ? Math.ceil(basemap.attribution!.replace(/\s+/g, ' ').trim().slice(0, 64).length * 13 * 0.56) + 24 : 0
+  const attribution = credit
+    ? `<rect x="${box.x + box.width - 14 - creditWidth}" y="${box.y + box.height - 42}" width="${creditWidth}" height="28" rx="14" fill="#07110f" fill-opacity="0.72"/>
+    <text x="${box.x + box.width - 26}" y="${box.y + box.height - 23}" text-anchor="end" fill="#f3f7f5" fill-opacity="0.7" font-size="13" font-weight="560">${credit}</text>`
     : ''
   return `<clipPath id="map-clip"><rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" rx="36"/></clipPath>
     <rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" rx="36" fill="#101c19"/>
