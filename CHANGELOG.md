@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.29...v0.2.30)
+
+## 🐛 Bug Fixes
+
+- **og**: a card's eyebrow keeps to the copy's column ([c5ee5c9](https://github.com/stacksjs/ts-images/commit/c5ee5c9)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.30 ([481e858](https://github.com/stacksjs/ts-images/commit/481e858)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.28...v0.2.29)
 
 ## ✨ Features
