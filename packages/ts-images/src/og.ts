@@ -408,6 +408,12 @@ export async function renderSocialCard(options: SocialCardOptions): Promise<Uint
       y: eyebrowBaseline,
       color: accent,
       letterSpacing: 0.1,
+      // The copy's column, like the title and subtitle under it: an eyebrow
+      // that is an address (`site.com/features/performance-analytics`) ran on
+      // into the product shot beside it.
+      maxWidth: maxTextWidth,
+      maxLines: 1,
+      ellipsis: true,
     })
   }
 
