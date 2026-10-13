@@ -16,7 +16,7 @@ export interface ImgxConfig {
   // App icon generation settings
   appIcon?: {
     outputDir?: string
-    platform?: 'macos' | 'ios' | 'all'
+    platform?: 'macos' | 'ios' | 'android' | 'all'
   }
 
   // Responsive image generation settings

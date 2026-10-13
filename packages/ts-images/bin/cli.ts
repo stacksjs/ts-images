@@ -102,7 +102,8 @@ interface AnalyzeCommandOptions {
 // CLI options interface for app-icon command
 interface AppIconCommandOptions {
   outputDir?: string
-  platform?: 'macos' | 'ios' | 'all'
+  platform?: 'macos' | 'ios' | 'android' | 'all'
+  background?: string
   verbose?: boolean
 }
 
@@ -589,10 +590,11 @@ cli
   })
 
 cli
-  .command('app-icon <input>', 'Generate app icons for macOS and iOS')
+  .command('app-icon <input>', 'Generate app icons for macOS, iOS and Android')
   .alias('icon')
   .option('-o, --output-dir <dir>', 'Output directory for app icons', { default: 'assets/app-icons' })
-  .option('-p, --platform <platform>', 'Target platform (macos, ios, all)', { default: 'all' })
+  .option('-p, --platform <platform>', 'Target platform (macos, ios, android, all)', { default: 'all' })
+  .option('-b, --background <color>', 'Colour under any transparency, making every icon opaque')
   .option('-v, --verbose', 'Enable verbose logging')
   .example('imgx app-icon app-icon.png')
   .example('imgx app-icon logo.png -o ./src/assets -p macos')
@@ -606,13 +608,14 @@ cli
       const results = await generateAppIcons(input, {
         outputDir: options?.outputDir,
         platform: options?.platform,
+        background: options?.background,
       })
 
       console.log(`Generated app icons for ${results.map(r => r.platform).join(', ')}:`)
 
       for (const result of results) {
         console.log(`\n${result.platform.toUpperCase()}:`)
-        console.log(`- Output directory: ${options?.outputDir || 'assets/app-icons'}/AppIcon.appiconset`)
+        console.log(`- Output directory: ${options?.outputDir || 'assets/app-icons'}/${result.platform === 'android' ? 'android' : 'AppIcon.appiconset'}`)
         console.log(`- Generated ${result.sizes.length} icon sizes`)
 
         if (options?.verbose) {

@@ -11,7 +11,7 @@ When developing applications, you need icons in various sizes for different plat
 - **iOS**: All icon sizes required for iPhone and iPad apps, including App Store icons
 - **macOS**: App icons for Mac applications, including the .icns format
 - **Web**: Favicon sets including various sizes and formats
-- **Android**: Coming soon (currently in beta)
+- **Android**: Square and round launcher icons in every density, plus the Play Store icon
 
 ## Basic Usage
 
@@ -76,6 +76,40 @@ imgx generates all iOS app icon sizes required by Apple, including:
 
 The output includes a properly formatted `Contents.json` file for use in Xcode projects.
 
+### Android Icons
+
+`--platform android` (or `generateAndroidAppIcons`) writes, under `android/`:
+
+| File | Size |
+|------|------|
+| `res/mipmap-mdpi/ic_launcher.png`, `ic_launcher_round.png` | 48×48 px |
+| `res/mipmap-hdpi/…` | 72×72 px |
+| `res/mipmap-xhdpi/…` | 96×96 px |
+| `res/mipmap-xxhdpi/…` | 144×144 px |
+| `res/mipmap-xxxhdpi/…` | 192×192 px |
+| `playstore-icon.png` | 512×512 px, for the Play Store listing |
+
+The round icon is the same artwork masked to a circle. Transparency is kept
+unless a background is given.
+
+### In memory
+
+`renderAppIcons` renders the same sets without writing anything, for a server
+that checks an upload and stores the icons itself:
+
+```ts
+import { renderAppIcons } from 'ts-images'
+
+const icons = await renderAppIcons(uploadBytes, { platforms: ['ios', 'android'], background: '#0a84ff' })
+for (const icon of icons)
+  await storage.write(`${icon.platform}/${icon.path}`, icon.bytes) // icon.size, icon.shape
+```
+
+iOS icons are always opaque, white under any transparency unless
+`background` says otherwise: App Store Connect refuses a marketing icon with an
+alpha channel. A source that is not square is contained, centred, never
+stretched or cropped.
+
 ### macOS Icons
 
 For macOS applications, imgx generates:
@@ -124,8 +158,9 @@ imgx app-icon icon.png --background "#ffffff"
 ```
 
 ```ts
-await createAppIcon('icon.png', {
-  background: '#ffffff', // or 'rgba(255, 255, 255, 0.5)' for semi-transparent
+await generateAppIcons('icon.png', {
+  platform: 'ios',
+  background: '#ffffff', // any colour parseColor reads; the icons come out opaque
 })
 ```
 
