@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.30...v0.2.31)
+
+## ✨ Features
+
+- **app-icon**: Android icons, opaque backgrounds, in-memory sets ([4f7b887](https://github.com/stacksjs/ts-images/commit/4f7b887)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.31 ([ff5ea76](https://github.com/stacksjs/ts-images/commit/ff5ea76)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.29...v0.2.30)
 
 ## 🐛 Bug Fixes
