@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.32...v0.2.33)
+
+## ✨ Features
+
+- **splash**: launch screens for iOS and Android from one logo ([fd13094](https://github.com/stacksjs/ts-images/commit/fd13094)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.33 ([7430a42](https://github.com/stacksjs/ts-images/commit/7430a42)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.31...v0.2.32)
 
 ## 🐛 Bug Fixes
