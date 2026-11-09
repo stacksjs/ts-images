@@ -105,6 +105,21 @@ jobs:
       - name: Install Dependencies
         run: pantry install
 
+      - name: Build image artifacts
+        working-directory: packages/ts-images
+        run: |
+          bun build.ts
+          test -s dist/src/index.js
+          test -s dist/bin/cli.js
+          test -s dist/index.d.ts
+
+      - name: Build plugin artifacts
+        working-directory: packages/bun-plugin
+        run: |
+          bun build.ts
+          test -s dist/index.js
+          test -s dist/index.d.ts
+
       - name: Publish Commit
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: pantry publish:commit './packages/ts-images' && pantry publish:commit './packages/bun-plugin'
