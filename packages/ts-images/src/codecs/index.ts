@@ -387,6 +387,10 @@ async function encodePng(imageData: ImageData, options: EncodeOptions): Promise<
     data,
   }, {
     deflateLevel: options.effort ?? 9,
+    // ImageData uses RGBA storage even when the requested file is RGB.
+    inputColorType: 6,
+    inputHasAlpha: true,
+    colorType: imageData.hasAlpha ? 6 : 2,
   })
   return new Uint8Array(out)
 }

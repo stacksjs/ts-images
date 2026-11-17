@@ -7,6 +7,12 @@ step — is a day's work by hand every time anything changes.
 `generateAppStoreScreenshots` takes a list of slides and a list of device
 classes and renders every combination at Apple's exact pixel dimensions.
 
+PNG screenshots are encoded as RGB without an alpha channel. App Store
+Connect rejects alpha channels even when every pixel is opaque. Rendered
+compositions containing transparent pixels are rejected with an actionable
+error. Ordinary PNG encoding continues to preserve requested
+transparency.
+
 ## Slides in, listing out
 
 ```ts

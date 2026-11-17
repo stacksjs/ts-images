@@ -6,7 +6,7 @@ imgx provides a powerful command-line interface (CLI) for performing image opera
 
 These options apply to all imgx commands:
 
-```
+```text
 --help, -h         Show help information
 --version, -v      Show version information
 --verbose          Enable verbose output

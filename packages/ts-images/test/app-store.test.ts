@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'bun:test'
-import { existsSync } from 'node:fs'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -7,10 +6,8 @@ import { APP_STORE_DISPLAY_SIZES, generateAppStoreScreenshot, generateAppStoreSc
 import { getMetadata } from '../src/codecs'
 import { loadFont } from '../src/font'
 
-// The composer draws real glyphs, so it needs a real face. Skipped rather
-// than failed where one is not on the machine, matching `text.test.ts`.
-const FONT = '/Users/chris/Code/Fonts/Satoshi/WEB/fonts/Satoshi-Bold.ttf'
-const hasFont = existsSync(FONT)
+// A licensed fixture keeps actual screenshot validation running in CI too.
+const FONT = join(import.meta.dir, 'fixtures/Anton-Regular.ttf')
 const CAPTURE = join(import.meta.dir, 'fixtures/og-image.png')
 
 async function font(): Promise<ReturnType<typeof loadFont>> {
@@ -38,7 +35,7 @@ describe('APP_STORE_DISPLAY_SIZES', () => {
   })
 })
 
-describe.if(hasFont)('generateAppStoreScreenshots', () => {
+describe('generateAppStoreScreenshots', () => {
   it('writes every slide at every display type, at Apple\'s exact dimensions', async () => {
     const outputDir = await scratch()
     try {
@@ -58,6 +55,9 @@ describe.if(hasFont)('generateAppStoreScreenshots', () => {
       const phone = await getMetadata(new Uint8Array(await readFile(results.APP_IPHONE_67![0]!)))
       expect(phone.width).toBe(1290)
       expect(phone.height).toBe(2796)
+      // Apple rejects an alpha channel even when every pixel is opaque.
+      for (const path of Object.values(results).flat())
+        expect((await readFile(path))[25]).toBe(2)
 
       const desktop = await getMetadata(new Uint8Array(await readFile(results.APP_DESKTOP![0]!)))
       expect(desktop.width).toBe(2880)
@@ -120,14 +120,28 @@ describe.if(hasFont)('generateAppStoreScreenshots', () => {
       const meta = await getMetadata(new Uint8Array(await readFile(path)))
       expect(meta.width).toBe(1200)
       expect(meta.height).toBe(1200)
+      expect((await readFile(path))[25]).toBe(2)
     }
     finally {
       await rm(outputDir, { recursive: true, force: true })
     }
   }, 60_000)
+
+  it('refuses a transparent composition instead of inventing a matte', async () => {
+    const outputDir = await scratch()
+    try {
+      await expect(generateAppStoreScreenshot(join(outputDir, 'transparent.png'), { width: 300, height: 600 }, { capture: CAPTURE, headline: 'Training' }, {
+        titleFont: await font(),
+        drawMark: (canvas) => { canvas.data[3] = 0 },
+      })).rejects.toThrow('App Store screenshots need an opaque background')
+    }
+    finally {
+      await rm(outputDir, { recursive: true, force: true })
+    }
+  })
 })
 
-describe.if(hasFont)('generateAppStoreScreenshots validation', () => {
+describe('generateAppStoreScreenshots validation', () => {
   it('refuses an empty slide list', async () => {
     await expect(generateAppStoreScreenshots({
       outputDir: '/tmp', titleFont: await font(), displayTypes: ['APP_IPHONE_67'], slides: [],

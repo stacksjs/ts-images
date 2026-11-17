@@ -238,9 +238,17 @@ async function composeSlide(
 
   const context: ComposeContext = { ...options, color, muted, bodyFont }
 
-  return beside
-    ? composeBeside(canvas, capture, slide, context)
-    : composeStacked(canvas, capture, slide, context)
+  const composed = beside
+    ? await composeBeside(canvas, capture, slide, context)
+    : await composeStacked(canvas, capture, slide, context)
+  // App Store Connect rejects the channel itself, even if all alpha is 255.
+  // Refuse a transparent composition rather than silently choosing a matte.
+  for (let index = 3; index < composed.data.length; index += 4) {
+    if (composed.data[index] !== 255)
+      throw new TypeError('App Store screenshots need an opaque background')
+  }
+  composed.hasAlpha = false
+  return composed
 }
 
 interface ComposeContext {
