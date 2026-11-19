@@ -15,7 +15,7 @@
     },
     "packages/bun-plugin": {
       "name": "bun-plugin-imgx",
-      "version": "0.2.33",
+      "version": "0.2.34",
       "dependencies": {
         "ts-images": "workspace:*"
       },
@@ -25,7 +25,7 @@
     },
     "packages/ts-images": {
       "name": "ts-images",
-      "version": "0.2.33",
+      "version": "0.2.34",
       "dependencies": {
         "@stacksjs/ts-avif": "^0.1.4",
         "@stacksjs/ts-bmp": "^0.1.0",
@@ -43,7 +43,7 @@
     },
     "packages/vscode": {
       "name": "@stacksjs/imgx-vscode",
-      "version": "0.2.33"
+      "version": "0.2.34"
     }
   },
   "packages": {

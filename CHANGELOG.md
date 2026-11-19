@@ -1,5 +1,18 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.33...v0.2.34)
+
+## 🐛 Bug Fixes
+
+- export opaque App Store screenshots without alpha channels ([71051e6](https://github.com/stacksjs/ts-images/commit/71051e6)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **ci**: build package artifacts before commit publication ([22073a9](https://github.com/stacksjs/ts-images/commit/22073a9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **svg**: pin validated declaration parser artifact ([ad0fbd0](https://github.com/stacksjs/ts-images/commit/ad0fbd0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/ts-images/compare/v0.2.32...v0.2.33)
 
 ## ✨ Features
