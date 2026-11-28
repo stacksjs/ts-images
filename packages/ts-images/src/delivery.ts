@@ -356,7 +356,7 @@ async function generateManifest(options: ImageDeliveryOptions): Promise<ImageDel
   const deliveryHash = hashDelivery(sourceBytes, deliveryOptions).slice(0, 16)
 
   const tasks = formats.flatMap(format => widths.map(width => ({ format, width })))
-  const variants = await mapConcurrent(tasks, concurrency, async ({ format, width }) => {
+  const results = await mapConcurrent(tasks, concurrency, async ({ format, width }) => {
     const filename = `${name}-${deliveryHash}-${width}.${formatExtensions[format]}`
     const requestedHeight = options.height ?? (options.aspectRatio ? Math.max(1, Math.round(width / options.aspectRatio)) : undefined)
     const fit = options.fit ?? 'inside'
@@ -369,7 +369,17 @@ async function generateManifest(options: ImageDeliveryOptions): Promise<ImageDel
       if (!options.upscale && (generated.width > source.width || generated.height > source.height)) {
         throw new TypeError(`Image variant ${generated.width}x${generated.height} would upscale the source`)
       }
-      const encoded = await encode(generated, format, { quality: getQuality(options.quality, format) })
+      let encoded: Uint8Array
+      try {
+        encoded = await encode(generated, format, { quality: getQuality(options.quality, format) })
+      }
+      catch (error) {
+        if (format === 'avif' && error instanceof RangeError
+          && error.message === 'ts-avif: pure TypeScript encoder currently supports frames up to 4096x2304') {
+          return undefined
+        }
+        throw error
+      }
       await storage.write(filename, encoded, {
         contentType: formatMimeTypes[format],
         cacheControl: 'public, max-age=31536000, immutable',
@@ -392,9 +402,11 @@ async function generateManifest(options: ImageDeliveryOptions): Promise<ImageDel
     } satisfies ImageVariant
   })
 
+  const variants = results.filter(variant => variant !== undefined)
   const sources: ImageDeliveryManifest['sources'] = {}
   for (const format of formats) {
-    sources[format] = createSrcset(variants.filter(variant => variant.format === format))
+    const formatVariants = variants.filter(variant => variant.format === format)
+    if (formatVariants.length > 0) sources[format] = createSrcset(formatVariants)
   }
 
   const fallbackVariants = variants.filter(variant => variant.format === fallbackFormat)

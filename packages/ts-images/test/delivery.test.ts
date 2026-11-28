@@ -215,6 +215,36 @@ describe('image delivery', () => {
     expect(transparentManifest.sources.png).toBeDefined()
   })
 
+  test('keeps the full-size fallback when a portrait exceeds the optional AVIF limit', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'ts-images-portrait-'))
+    outputDirectories.push(outDir)
+    const { encode } = await import('../src')
+    const input = await encode({
+      data: new Uint8Array(24 * 2400 * 4).fill(255),
+      width: 24,
+      height: 2400,
+      colorSpace: 'srgb',
+      hasAlpha: false,
+      bitDepth: 8,
+    }, 'png')
+    const options = {
+      input,
+      outDir,
+      widths: [12, 24],
+      formats: ['avif', 'webp'] as const,
+      fallbackFormat: 'png' as const,
+      placeholder: false,
+    }
+    const manifest = await createImageDeliveryManifest(options)
+    expect(manifest.variants.filter(variant => variant.format === 'avif').map(variant => variant.width)).toEqual([12])
+    expect(manifest.variants.find(variant => variant.format === 'webp' && variant.width === 24)).toMatchObject({ height: 2400 })
+    expect(manifest.fallback).toMatchObject({ format: 'png', width: 24, height: 2400 })
+    expect(await createImageDeliveryManifest(options)).toEqual(manifest)
+    const fullSizeOnly = await createImageDeliveryManifest({ ...options, widths: [24] })
+    expect(fullSizeOnly.sources.avif).toBeUndefined()
+    expect(fullSizeOnly.fallback).toMatchObject({ width: 24, height: 2400 })
+  })
+
   test('builds a deterministic catalog with bounded source concurrency', async () => {
     const outDir = await mkdtemp(join(tmpdir(), 'ts-images-catalog-'))
     outputDirectories.push(outDir)
